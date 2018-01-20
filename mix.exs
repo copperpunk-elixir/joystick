@@ -47,6 +47,7 @@ defmodule Joystick.Mixfile do
       links: %{
         "GitHub" => "https://github.com/connorrigby/joystick",
       },
+      files: ["lib", "mix.exs", "README*", "LICENSE*", "c_src"],
       source_url: "https://github.com/connorrigby/joystick"
     ]
   end
