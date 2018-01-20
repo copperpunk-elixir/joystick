@@ -57,6 +57,7 @@ defmodule Joystick do
     GenServer.call(pid, :stop)
   end
 
+  @doc false
   def init([device, listener]) do
     {:ok, res} = start_js(device)
     js = get_info(res)
@@ -64,19 +65,23 @@ defmodule Joystick do
     {:ok, %{res: res, listener: listener, last_ts: 0, joystick: js}}
   end
 
+  @doc false
   def terminate(_, state) do
     if state.res do
       stop_js(state.res)
     end
   end
 
+  @doc false
   def handle_call(:stop, _from, %{res: res} = state) do
     :ok = stop_js(res)
     {:stop, :normal, %{state | res: nil}}
   end
 
+  @doc false
   def handle_call(:info, _, state), do: {:reply, state.joystick, state}
 
+  @doc false
   def handle_info({:select, res, _ref, :ready_input}, %{last_ts: last_ts} = state) do
     {time, raw_input} = :timer.tc(fn -> Joystick.receive_input(res) end)
     case raw_input do
