@@ -4,7 +4,7 @@ defmodule Joystick.Mixfile do
   def project do
     [
       app: :joystick,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.5",
       compilers: [:elixir_make] ++ Mix.compilers,
       make_clean: ["clean"],

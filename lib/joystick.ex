@@ -51,10 +51,10 @@ defmodule Joystick do
   end
 
   @doc """
-  Stop a running udev or kernel (uevent) monitor.
+  Stop a running joystick instance.
   """
-  def stop(pid) do
-    GenServer.call(pid, :stop)
+  def stop(joystick, reason \\ :normal) do
+    GenServer.stop(joystick, reason)
   end
 
   @doc false
@@ -70,12 +70,6 @@ defmodule Joystick do
     if state.res do
       stop_js(state.res)
     end
-  end
-
-  @doc false
-  def handle_call(:stop, _from, %{res: res} = state) do
-    :ok = stop_js(res)
-    {:stop, :normal, %{state | res: nil}}
   end
 
   @doc false
