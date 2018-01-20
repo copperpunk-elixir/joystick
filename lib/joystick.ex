@@ -3,12 +3,14 @@ defmodule Joystick do
   Simple wrapper to get Linux Joystick events.
 
   # Usage
+  ```
   iex()> {:ok, js} = Joystick.start_link(0, self())
   iex()> flush()
     {:joystick, %Joystick.Event{number: 1, timestamp: 1441087318, type: :axis, value: -60}}
     {:joystick, %Joystick.Event{number: 4, timestamp: 1441087318, type: :axis, value: -5}}
   iex() Joystick.info(js)
   %{axes: 8, buttons: 11, name: 'Microsoft X-Box One pad', version: 131328}
+  ```
   """
 
   use GenServer
