@@ -86,9 +86,9 @@ defmodule Joystick do
         :ok = poll(res)
         # Logger.debug "Event (#{time}µs): #{inspect event}"
         {:noreply, %{state | last_ts: current_ts}}
-      event ->
+      event = %{timestamp: current_ts} when current_ts < last_ts ->
         Logger.warn "Got late event (#{time}µs): #{inspect event}"
-        {:noreply, state}
+        {:noreply, %{state | last_ts: current_ts}}
     end
   end
 
