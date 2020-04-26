@@ -79,16 +79,18 @@ defmodule Joystick do
   def handle_info({:select, res, _ref, :ready_input}, %{last_ts: last_ts} = state) do
     {time, raw_input} = :timer.tc(fn -> Joystick.receive_input(res) end)
     case raw_input do
-      {:error, reason} -> {:stop, {:input_error, reason}, state}
+      {:error, reason} ->
+        {:stop, {:input_error, reason}, state}
       input = %{timestamp: current_ts} when current_ts >= last_ts  ->
         event = {:joystick, Event.decode(input)}
         send(state.listener, event)
         :ok = poll(res)
         # Logger.debug "Event (#{time}µs): #{inspect event}"
         {:noreply, %{state | last_ts: current_ts}}
-      event ->
+      event = %{timestamp: current_ts} ->
         Logger.warn "Got late event (#{time}µs): #{inspect event}"
-        {:noreply, state}
+        :ok = poll(res)
+        {:noreply, %{state | last_ts: current_ts}}
     end
   end
 
