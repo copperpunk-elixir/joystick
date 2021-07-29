@@ -34,9 +34,9 @@ defmodule Joystick.Mixfile do
 
   defp deps do
     [
-      {:elixir_make, "~> 0.4.0", runtime: false},
-      {:dialyxir, "~> 0.5.1", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.18.1", only: [:dev, :test]},
+      {:elixir_make, "~> 0.6.2", runtime: false},
+      {:dialyxir, "~> 1.1.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
     ]
   end
 
