@@ -30,9 +30,22 @@ defmodule Joystick do
       struct(__MODULE__, %{data | type: :axis})
     end
 
-    def decode(%{timestamp: _, number: _, type: _, value: _} = data) do
-      struct(__MODULE__, %{data | type: :init})
+    def decode(%{timestamp: _, number: _, type: 0x81, value: _} = data) do
+      # Init Button
+      struct(__MODULE__, %{data | type: :button})
     end
+    def decode(%{timestamp: _, number: _, type: 0x82, value: raw_value} = data) do
+      # Init Axis
+      # must scale axis value
+      value_scaled = raw_value/32.767
+      value = cond do
+        value_scaled > 999 -> 999
+        value_scaled < -999 -> -999
+        true -> value_scaled
+      end
+      struct(__MODULE__, %{data | type: :axis, value: value})
+    end
+
   end
 
   @doc """
