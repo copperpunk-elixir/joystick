@@ -1,17 +1,22 @@
 defmodule Joystick.Mixfile do
   use Mix.Project
 
+  @version "0.2.1"
+  @source_url "https://github.com/copperpunk-elixir/joystick"
+
   def project do
     [
       app: :joystick,
-      version: "0.2.0",
+      version: @version,
       elixir: "~> 1.12",
-      compilers: [:elixir_make] ++ Mix.compilers,
+      compilers: [:elixir_make] ++ Mix.compilers(),
       make_clean: ["clean"],
       make_env: make_env(),
       package: package(),
+      source_url: @source_url,
+      docs: docs(),
       description: description(),
-      start_permanent: Mix.env == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
   end
@@ -23,6 +28,7 @@ defmodule Joystick.Mixfile do
           "ERL_EI_INCLUDE_DIR" => "#{:code.root_dir()}/usr/include",
           "ERL_EI_LIBDIR" => "#{:code.root_dir()}/usr/lib"
         }
+
       _ ->
         %{}
     end
@@ -36,19 +42,18 @@ defmodule Joystick.Mixfile do
     [
       {:elixir_make, "~> 0.6.2", runtime: false},
       {:dialyxir, "~> 1.1.0", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.24", only: :dev, runtime: false}
     ]
   end
 
   defp package do
     [
       licenses: ["MIT"],
-      maintainers: ["konnorrigby@gmail.com"],
+      maintainers: ["greg@copperpunk.com"],
       links: %{
-        "GitHub" => "https://github.com/connorrigby/joystick",
+        "GitHub" => @source_url
       },
       files: ["lib", "mix.exs", "README*", "LICENSE*", "c_src", "Makefile"],
-      source_url: "https://github.com/connorrigby/joystick"
     ]
   end
 
@@ -56,5 +61,14 @@ defmodule Joystick.Mixfile do
     """
     Simple Elixir Joystick Wrapper.
     """
+  end
+
+  defp docs do
+    [
+      extras: ["README.md"],
+      main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url
+    ]
   end
 end
