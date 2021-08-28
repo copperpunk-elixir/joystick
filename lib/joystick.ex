@@ -34,18 +34,21 @@ defmodule Joystick do
       # Init Button
       struct(__MODULE__, %{data | type: :button})
     end
+
     def decode(%{timestamp: _, number: _, type: 0x82, value: raw_value} = data) do
       # Init Axis
       # must scale axis value
-      value_scaled = raw_value/32.767
-      value = cond do
-        value_scaled > 999 -> 999
-        value_scaled < -999 -> -999
-        true -> value_scaled
-      end
+      value_scaled = raw_value / 32.767
+
+      value =
+        cond do
+          value_scaled > 999 -> 999
+          value_scaled < -999 -> -999
+          true -> value_scaled
+        end
+
       struct(__MODULE__, %{data | type: :axis, value: value})
     end
-
   end
 
   @doc """
@@ -72,10 +75,32 @@ defmodule Joystick do
 
   @doc false
   def init([device, listener]) do
-    {:ok, res} = start_js(device)
-    js = get_info(res)
-    :ok = poll(res)
-    {:ok, %{res: res, listener: listener, last_ts: 0, joystick: js}}
+    GenServer.cast(self(), {:connect_to_joystick, device, listener})
+    {:ok, %{joystick: nil}}
+  end
+
+  def handle_cast({:connect_to_joystick, device, listener}, state) do
+    state =
+      case start_js(device) do
+        {:ok, res} ->
+          js = get_info(res)
+          :ok = poll(res)
+
+          GenServer.cast(listener, {:joystick_connected, js})
+          %{res: res, listener: listener, last_ts: 0, joystick: js}
+
+        {:error, error} ->
+          Logger.warn("Joystick could not connect: #{inspect(error)}")
+          Logger.warn("Retrying in 1000ms.")
+          Process.sleep(1000)
+          GenServer.cast(self(), {:connect_to_joystick, device, listener})
+          state
+
+        other ->
+          raise "Joystick should not have reached here: #{inspect(other)}"
+      end
+
+    {:noreply, state}
   end
 
   @doc false
@@ -91,17 +116,20 @@ defmodule Joystick do
   @doc false
   def handle_info({:select, res, _ref, :ready_input}, %{last_ts: last_ts} = state) do
     {time, raw_input} = :timer.tc(fn -> Joystick.receive_input(res) end)
+
     case raw_input do
       {:error, reason} ->
         {:stop, {:input_error, reason}, state}
-      input = %{timestamp: current_ts} when current_ts >= last_ts  ->
+
+      input = %{timestamp: current_ts} when current_ts >= last_ts ->
         event = {:joystick, Event.decode(input)}
         send(state.listener, event)
         :ok = poll(res)
         # Logger.debug "Event (#{time}µs): #{inspect event}"
         {:noreply, %{state | last_ts: current_ts}}
+
       event = %{timestamp: current_ts} ->
-        Logger.warn "Got late event (#{time}µs): #{inspect event}"
+        Logger.warn("Got late event (#{time}µs): #{inspect(event)}")
         :ok = poll(res)
         {:noreply, %{state | last_ts: current_ts}}
     end
@@ -110,11 +138,13 @@ defmodule Joystick do
   @on_load :load_nif
   @doc false
   def load_nif do
-    nif_file = '#{:code.priv_dir(:joystick)}/joystick_nif'
+    # _nif'
+    nif_file = '#{:code.priv_dir(:joystick)}/joystick'
+
     case :erlang.load_nif(nif_file, 0) do
       :ok -> :ok
       {:error, {:reload, _}} -> :ok
-      {:error, reason} -> Logger.warn "Failed to load nif: #{inspect reason}"
+      {:error, reason} -> Logger.warn("Failed to load nif: #{inspect(reason)}")
     end
   end
 
