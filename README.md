@@ -14,7 +14,7 @@ by adding `joystick` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:joystick, "~> 0.2.1"}
+    {:joystick, "~> 0.2.2"}
   ]
 end
 ```
