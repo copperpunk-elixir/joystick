@@ -56,9 +56,12 @@ defmodule Joystick do
   * `device` - a number pointing to the js file.
     * for example 0 would evaluate to "/dev/input/js0"
   * `listener` - pid to receive events
+  * `callback` - a message will be sent to `listener` with the form `{callback, joystick}`, where
+  `joystick` is be the pid of the Joystick GenServer. Default value of `callback` is `nil`, which means the
+  `Joystick` pid will be returned immediately, but the GenServer will crash if a joystick connection cannot be opened.
   """
-  def start_link(device, listener) do
-    GenServer.start_link(__MODULE__, [device, listener])
+  def start_link(device, listener, callback \\ nil) do
+    GenServer.start_link(__MODULE__, [device, listener, callback])
   end
 
   @doc "Get information about a joystick"
@@ -74,19 +77,32 @@ defmodule Joystick do
   end
 
   @doc false
-  def init([device, listener]) do
-    GenServer.cast(self(), {:connect_to_joystick, device, listener})
-    {:ok, %{joystick: nil}}
+  def init([device, listener, callback]) do
+    state =
+      if is_nil(callback) do
+        {:ok, res} = start_js(device)
+        js = get_info(res)
+        :ok = poll(res)
+
+        %{res: res, listener: listener, last_ts: 0, joystick: js}
+      else
+        GenServer.cast(self(), {:connect_to_joystick, device, listener, callback})
+        %{joystick: nil}
+      end
+
+    {:ok, state}
   end
 
-  def handle_cast({:connect_to_joystick, device, listener}, state) do
+  def handle_cast({:connect_to_joystick, device, listener, callback}, state) do
+    Logger.debug("Joystick attempting to connect to #{device}")
+
     state =
       case start_js(device) do
         {:ok, res} ->
           js = get_info(res)
           :ok = poll(res)
 
-          GenServer.cast(listener, {:joystick_connected, js})
+          GenServer.cast(listener, {callback, js})
           %{res: res, listener: listener, last_ts: 0, joystick: js}
 
         {:error, error} ->
